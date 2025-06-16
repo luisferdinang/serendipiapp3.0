@@ -15,21 +15,6 @@
     "rootDir": ".",
     "declaration": true,
     
-    /* Paths */
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["./*"],
-      "@components/*": ["./components/*"],
-      "@pages/*": ["./pages/*"],
-      "@services/*": ["./services/*"],
-      "@utils/*": ["./utils/*"],
-      "@hooks/*": ["./hooks/*"],
-      "@contexts/*": ["./contexts/*"],
-      "@styles/*": ["./styles/*"],
-      "@assets/*": ["./assets/*"],
-      "@types/*": ["./types/*"]
-    },
-    
     /* Type Checking */
     "strict": true,
     "noUnusedLocals": true,
@@ -49,16 +34,12 @@
     /* JSX */
     "jsx": "react-jsx",
     "jsxImportSource": "react",
-    "resolveJsonModule": true,
-    "isolatedModules": true
+    
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   },
-  "include": [
-    "**/*.ts",
-    "**/*.tsx",
-    "**/*.d.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist"
-  ]
+  "include": ["src/**/*", "scripts/**/*"],
+  "exclude": ["node_modules", "dist"],
+  "typeRoots": ["./node_modules/@types", "./src/types"]
 }

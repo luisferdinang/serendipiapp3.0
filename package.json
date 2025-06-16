@@ -7,35 +7,21 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "type-check": "tsc --noEmit",
-    "clean": "rimraf dist .cache",
-    "prebuild": "npm run clean && npm run type-check",
-    "postinstall": "npm run type-check",
-    "import:transactions": "tsx scripts/runImport.ts",
-    "create:admin": "tsx scripts/createAdmin.ts"
+    "import:transactions": "tsx scripts/runImport.ts"
   },
   "dependencies": {
-    "@firebase/analytics": "^0.10.16",
-    "@firebase/app": "^0.13.1",
-    "@firebase/auth": "^1.10.7",
-    "@firebase/firestore": "^4.7.17",
-    "@firebase/performance": "^0.7.6",
-    "@types/react": "^18.2.66",
-    "@types/react-dom": "^18.2.22",
-    "@vitejs/plugin-react": "^4.2.1",
     "firebase": "^11.9.1",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-router-dom": "^6.22.3"
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
   },
   "devDependencies": {
-    "@types/node": "^20.11.28",
-    "@types/react-router-dom": "^5.3.3",
-    "rimraf": "^5.0.10",
+    "@types/node": "^22.15.32",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "@vitejs/plugin-react": "^4.5.2",
     "ts-node": "^10.9.2",
-    "tsx": "^4.7.1",
-    "typescript": "^5.8.3",
-    "vite": "^5.1.4"
+    "tsx": "^4.20.3",
+    "typescript": "~5.7.2",
+    "vite": "^6.2.0"
   }
 }
