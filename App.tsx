@@ -9,7 +9,8 @@ import { TransactionFormModal } from './components/TransactionFormModal';
 import { DeleteConfirmationModal } from './components/DeleteConfirmationModal';
 import { Button } from './components/ui/Button';
 import { useTransactions } from './hooks/useTransactions';
-import { Transaction, CustomDateRange, FilterPeriod } from './types';
+import { Transaction, CustomDateRange, FilterPeriod, FinancialSummaryData } from './types';
+import { INITIAL_EXCHANGE_RATE } from './constants';
 
 const PlusIcon: React.FC<{ className?: string }> = ({ className }) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={`w-5 h-5 ${className}`}>
@@ -20,7 +21,7 @@ const PlusIcon: React.FC<{ className?: string }> = ({ className }) => (
 
 const App: React.FC = () => {
   const {
-    transactions, // These are already filtered by date
+    transactions,
     incomeAndAdjustments,
     expenses,
     financialSummary,
@@ -37,6 +38,14 @@ const App: React.FC = () => {
     error,
     getPaymentMethodDetails
   } = useTransactions();
+
+  // Estado inicial para evitar errores de undefined
+  const safeFinancialSummary = financialSummary || {
+    bs: { periodIncome: 0, periodExpenses: 0, cashBalance: 0, bankBalance: 0, totalBalance: 0 },
+    usd: { periodIncome: 0, periodExpenses: 0, cashBalance: 0, usdtBalance: 0, totalBalance: 0 }
+  };
+
+  const safeExchangeRate = exchangeRate || INITIAL_EXCHANGE_RATE;
 
   const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | undefined>(undefined);
@@ -106,7 +115,7 @@ const App: React.FC = () => {
           onCustomRangeChange={handleCustomRangeChange}
         />
 
-        <FinancialSummary summary={financialSummary} />
+        <FinancialSummary summary={safeFinancialSummary} />
 
         <div className="grid lg:grid-cols-2 gap-6 mb-8">
           <TransactionList
@@ -126,8 +135,8 @@ const App: React.FC = () => {
         </div>
 
         <CurrencyConverter 
-          bsTotal={financialSummary.bs.totalBalance}
-          exchangeRate={exchangeRate}
+          bsTotal={safeFinancialSummary.bs.totalBalance}
+          exchangeRate={safeExchangeRate}
           onExchangeRateChange={setExchangeRate}
         />
 

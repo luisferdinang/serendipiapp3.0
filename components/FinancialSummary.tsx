@@ -6,12 +6,21 @@ interface SummaryCardProps {
   title: string;
   currency: Currency;
   periodIncome: number;
+  periodExpenses: number;
   balances: { label: string; value: number }[];
   totalBalance: number;
   gradient: string;
 }
 
-const SummaryCard: React.FC<SummaryCardProps> = ({ title, currency, periodIncome, balances, totalBalance, gradient }) => {
+const SummaryCard: React.FC<SummaryCardProps> = ({ 
+  title, 
+  currency, 
+  periodIncome, 
+  periodExpenses,
+  balances, 
+  totalBalance, 
+  gradient 
+}) => {
   const formatCurrency = (value: number) => {
     return `${value.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}`;
   };
@@ -21,9 +30,15 @@ const SummaryCard: React.FC<SummaryCardProps> = ({ title, currency, periodIncome
       <h3 className="text-2xl font-bold mb-1">{title}</h3>
       <p className="text-sm opacity-80 mb-4">Resumen Financiero</p>
       
-      <div className="mb-4">
-        <p className="text-sm opacity-90">Ingresos del Período:</p>
-        <p className="text-xl font-semibold">{formatCurrency(periodIncome)}</p>
+      <div className="grid grid-cols-2 gap-4 mb-4">
+        <div>
+          <p className="text-sm opacity-90">Ingresos:</p>
+          <p className="text-lg font-semibold text-green-200">{formatCurrency(periodIncome)}</p>
+        </div>
+        <div>
+          <p className="text-sm opacity-90">Gastos:</p>
+          <p className="text-lg font-semibold text-red-200">-{formatCurrency(periodExpenses)}</p>
+        </div>
       </div>
 
       <div className="space-y-2 mb-4 grow">
@@ -53,6 +68,7 @@ export const FinancialSummary: React.FC<{ summary: FinancialSummaryData }> = ({ 
         title="Bolívares (Bs.)"
         currency={Currency.BS}
         periodIncome={summary.bs.periodIncome}
+        periodExpenses={summary.bs.periodExpenses}
         balances={[
           { label: 'Saldo en Efectivo (Bs.)', value: summary.bs.cashBalance },
           { label: 'Saldo en Banco (Pago Móvil Bs.)', value: summary.bs.bankBalance },
@@ -64,6 +80,7 @@ export const FinancialSummary: React.FC<{ summary: FinancialSummaryData }> = ({ 
         title="Dólares (USD)"
         currency={Currency.USD}
         periodIncome={summary.usd.periodIncome}
+        periodExpenses={summary.usd.periodExpenses}
         balances={[
           { label: 'Saldo en Efectivo (USD)', value: summary.usd.cashBalance },
           { label: 'Saldo Digital (USDT)', value: summary.usd.usdtBalance },
