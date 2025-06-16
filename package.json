@@ -5,11 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npm run type-check && vite build",
+    "build": "vite build",
     "preview": "vite preview",
     "preview:build": "vite build && vite preview",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "type-check": "node_modules/.bin/tsc --noEmit",
+    "type-check": "tsc --noEmit",
+    "postinstall": "npm run type-check",
     "import:transactions": "tsx scripts/runImport.ts",
     "create:admin": "tsx scripts/createAdmin.ts"
   },

@@ -1,28 +1,38 @@
 [build]
-  command = "npm ci && npm run build"
+  command = "npm ci && npm install && npm run build"
   publish = "dist"
   functions = "functions"
 
+# Configuración para el entorno de producción
+[context.production]
+  command = "npm ci && npm install && npm run build"
+
+# Configuración para previsualización de despliegues
+[context.deploy-preview]
+  command = "npm ci && npm install && npm run build"
+
+# Configuración para despliegues de ramas
+[context.branch-deploy]
+  command = "npm ci && npm install && npm run build"
+
 [dev]
   command = "npm run dev"
-  port = 3000
-  targetPort = 3000
-  framework = "vite"
-  autoLaunch = true
+  port = 5173
+  targetPort = 5173
 
-# Redirecciones para SPA (Single Page Application)
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
-  force = false
 
-# Configuración de funciones serverless (si es necesario)
 [functions]
   node_bundler = "esbuild"
-  external_node_modules = ["firebase-admin"]
 
-# Variables de entorno de construcción
+[dev]
+  framework = "#custom"
+  targetPort = 5173
+  autoLaunch = true
+
 [build.environment]
   NODE_VERSION = "20"
   NPM_FLAGS = "--legacy-peer-deps"
@@ -31,27 +41,6 @@
   YARN_FLAGS = ""
   NODE_ENV = "production"
   VITE_APP_ENV = "production"
-
-# Configuración para el entorno de producción
-[context.production]
-  command = "npm ci && npm run build"
-  [context.production.environment]
-    NODE_ENV = "production"
-    VITE_APP_ENV = "production"
-
-# Configuración para previsualización de despliegues
-[context.deploy-preview]
-  command = "npm ci && npm run build"
-  [context.deploy-preview.environment]
-    NODE_ENV = "development"
-    VITE_APP_ENV = "development"
-
-# Configuración para despliegues de ramas
-[context.branch-deploy]
-  command = "npm ci && npm run build"
-  [context.branch-deploy.environment]
-    NODE_ENV = "development"
-    VITE_APP_ENV = "development"
 
 # Configuración de encabezados de seguridad
 [[headers]]
