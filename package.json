@@ -7,17 +7,26 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "import:transactions": "tsx scripts/runImport.ts"
+    "import:transactions": "tsx scripts/runImport.ts",
+    "create:admin": "tsx scripts/createAdmin.ts"
   },
   "dependencies": {
+    "@firebase/analytics": "^0.10.16",
+    "@firebase/app": "^0.13.1",
+    "@firebase/auth": "^1.10.7",
+    "@firebase/firestore": "^4.7.17",
+    "@firebase/performance": "^0.7.6",
+    "@types/react-router-dom": "^5.3.3",
     "firebase": "^11.9.1",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "react-router-dom": "^7.6.2"
   },
   "devDependencies": {
     "@types/node": "^22.15.31",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
+    "@vitejs/plugin-react": "^4.5.2",
     "ts-node": "^10.9.2",
     "tsx": "^4.20.3",
     "typescript": "~5.7.2",

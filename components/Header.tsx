@@ -1,6 +1,8 @@
 
 import React from 'react';
 import { APP_TITLE } from '../constants';
+import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const ShootingStarIcon: React.FC<{ className?: string }> = ({ className }) => (
   <svg 
@@ -17,6 +19,17 @@ const ShootingStarIcon: React.FC<{ className?: string }> = ({ className }) => (
 
 
 export const Header: React.FC = () => {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/');
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+    }
+  };
   return (
     <header className="bg-gradient-to-r from-slate-800 via-slate-900 to-black p-6 shadow-lg sticky top-0 z-40">
       <div className="container mx-auto flex items-center justify-between">
@@ -26,6 +39,14 @@ export const Header: React.FC = () => {
             {APP_TITLE}
           </h1>
         </div>
+        {user && (
+          <button
+            onClick={handleLogout}
+            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+          >
+            Cerrar Sesión
+          </button>
+        )}
       </div>
     </header>
   );

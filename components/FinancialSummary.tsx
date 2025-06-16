@@ -46,9 +46,14 @@ const SummaryCard: React.FC<SummaryCardProps> = ({ title, currency, periodIncome
 };
 
 
-export const FinancialSummary: React.FC<{ summary: FinancialSummaryData }> = ({ summary }) => {
+interface FinancialSummaryProps {
+  summary: FinancialSummaryData;
+  className?: string;
+}
+
+export const FinancialSummary: React.FC<FinancialSummaryProps> = ({ summary, className = '' }) => {
   return (
-    <div className="mb-8 grid md:grid-cols-2 gap-6">
+    <div className={`grid md:grid-cols-2 gap-6 ${className}`}>
       <SummaryCard
         title="Bolívares (Bs.)"
         currency={Currency.BS}

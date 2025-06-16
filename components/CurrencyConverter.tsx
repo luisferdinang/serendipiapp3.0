@@ -8,6 +8,7 @@ interface CurrencyConverterProps {
   bsTotal: number;
   exchangeRate: number;
   onExchangeRateChange: (rate: number) => void;
+  onClose?: () => void;
 }
 
 const ExchangeIcon: React.FC<{ className?: string }> = ({ className }) => (
@@ -17,21 +18,27 @@ const ExchangeIcon: React.FC<{ className?: string }> = ({ className }) => (
 );
 
 
-export const CurrencyConverter: React.FC<CurrencyConverterProps> = ({ bsTotal, exchangeRate, onExchangeRateChange }) => {
+export const CurrencyConverter: React.FC<CurrencyConverterProps> = ({
+  bsTotal,
+  exchangeRate,
+  onExchangeRateChange,
+  onClose
+}) => {
   const [currentRateInput, setCurrentRateInput] = useState<string>(exchangeRate.toString());
   const [convertedAmount, setConvertedAmount] = useState<number>(0);
+  const safeBsTotal = bsTotal || 0; // Asegura que siempre tengamos un número
 
   useEffect(() => {
     setCurrentRateInput(exchangeRate.toString());
   }, [exchangeRate]);
 
   useEffect(() => {
-    if (bsTotal > 0 && parseFloat(currentRateInput) > 0) {
-      setConvertedAmount(bsTotal / parseFloat(currentRateInput));
+    if (safeBsTotal > 0 && parseFloat(currentRateInput) > 0) {
+      setConvertedAmount(safeBsTotal / parseFloat(currentRateInput));
     } else {
       setConvertedAmount(0);
     }
-  }, [bsTotal, currentRateInput]);
+  }, [safeBsTotal, currentRateInput]);
 
   const handleRateUpdate = () => {
     const newRate = parseFloat(currentRateInput);
@@ -44,16 +51,29 @@ export const CurrencyConverter: React.FC<CurrencyConverterProps> = ({ bsTotal, e
   };
 
   return (
-    <div className="p-6 bg-slate-800 rounded-xl shadow-xl mt-8">
-      <h3 className="text-xl font-semibold text-amber-300 mb-4 flex items-center">
-        <ExchangeIcon className="mr-2" />
-        Conversor Bs. a USD
-      </h3>
+    <div className="p-6 bg-slate-800 rounded-xl shadow-xl mt-8 relative">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-xl font-semibold text-amber-300 flex items-center">
+          <ExchangeIcon className="mr-2" />
+          Conversor Bs. a USD
+        </h3>
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-white"
+            aria-label="Cerrar"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        )}
+      </div>
       <div className="grid md:grid-cols-3 gap-4 items-end">
         <Input
           label={`Saldo Total en ${Currency.BS}`}
           id="bsTotal"
-          value={bsTotal.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          value={safeBsTotal.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           readOnly
           className="bg-slate-700 cursor-not-allowed"
           containerClassName="mb-0"
