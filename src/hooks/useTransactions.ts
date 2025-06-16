@@ -20,59 +20,20 @@ export const useTransactions = () => {
   const [exchangeRate, setExchangeRateState] = useState<number>(INITIAL_EXCHANGE_RATE);
 
   const loadInitialData = useCallback(async () => {
-    console.log('Iniciando carga de datos...');
     setIsLoading(true);
     setError(null);
-    
-    // Establecer un tiempo de espera máximo de 10 segundos
-    const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Tiempo de espera agotado al cargar los datos')), 10000)
-    );
-
     try {
-      console.log('Obteniendo transacciones y tasa de cambio...');
-      
-      // Usar Promise.race para manejar el tiempo de espera
-      const data = await Promise.race([
-        Promise.all([
-          transactionService.getTransactions(),
-          transactionService.getExchangeRate()
-        ]),
-        timeoutPromise
-      ]) as [Transaction[], number | null];
-      
-      const [storedTransactions, storedRate] = data;
-      
-      console.log('Transacciones cargadas:', storedTransactions);
-      console.log('Tasa de cambio cargada:', storedRate);
-      
-      // Verificar si storedTransactions es un array
-      if (!Array.isArray(storedTransactions)) {
-        throw new Error('Formato de transacciones inválido');
-      }
-      
-      const sortedTransactions = [...storedTransactions].sort((a: Transaction, b: Transaction) => 
-        new Date(b.date).getTime() - new Date(a.date).getTime()
-      );
-      
-      console.log('Transacciones ordenadas:', sortedTransactions);
-      
-      setTransactions(sortedTransactions);
-      
-      if (storedRate !== null && typeof storedRate === 'number') {
-        console.log('Estableciendo tasa de cambio:', storedRate);
+      const [storedTransactions, storedRate] = await Promise.all([
+        transactionService.getTransactions(),
+        transactionService.getExchangeRate()
+      ]);
+      setTransactions(storedTransactions.sort((a: Transaction, b: Transaction) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+      if (storedRate !== null) {
         setExchangeRateState(storedRate);
-      } else {
-        console.log('No se encontró tasa de cambio guardada, usando valor por defecto');
       }
     } catch (e) {
-      const errorMessage = e instanceof Error ? e.message : 'Error desconocido al cargar datos';
-      console.error('Error en loadInitialData:', e);
-      setError(`Error al cargar datos: ${errorMessage}. Por favor, recarga la página.`);
-      
-      // Establecer datos vacíos para permitir que la aplicación se renderice
-      setTransactions([]);
-      setExchangeRateState(INITIAL_EXCHANGE_RATE);
+      setError("Error al cargar datos. Intenta de nuevo.");
+      console.error(e);
     } finally {
       setIsLoading(false);
     }
@@ -93,20 +54,11 @@ export const useTransactions = () => {
   };
 
   const addTransaction = async (transactionData: Omit<Transaction, 'id'>) => {
-    // Asegurarse de que la fecha esté en el formato correcto
-    const transactionDate = new Date(transactionData.date);
-    const normalizedDate = formatDateForInput(transactionDate);
-    
     const newTransaction: Transaction = {
       ...transactionData,
-      date: normalizedDate, // Asegurar formato consistente
       id: Date.now().toString() + Math.random().toString(36).substring(2, 9), // Simple unique ID
     };
-    
-    const updatedTransactions = [newTransaction, ...transactions].sort((a: Transaction, b: Transaction) => 
-      new Date(b.date).getTime() - new Date(a.date).getTime()
-    );
-    
+    const updatedTransactions = [newTransaction, ...transactions].sort((a: Transaction, b: Transaction) => new Date(b.date).getTime() - new Date(a.date).getTime());
     setTransactions(updatedTransactions);
     await transactionService.saveTransactions(updatedTransactions);
   };
@@ -133,72 +85,36 @@ export const useTransactions = () => {
   };
 
   const getFilteredTransactions = useCallback((): Transaction[] => {
-    if (!transactions || transactions.length === 0) return [];
-    
-    return transactions.filter((t: Transaction) => {
-      // Filtrado por período
-      if (filterPeriod === FilterPeriod.ALL) return true;
-      
-      try {
-        // Asegurarse de que la transacción tenga una fecha válida
-        if (!t.date) return false;
+    return transactions
+      .filter((t: Transaction) => {
+        // Filtrado por período
+        if (filterPeriod === FilterPeriod.ALL) return true;
         
-        // Convertir la fecha de la transacción a un objeto Date
         const transactionDate = new Date(t.date);
-        if (isNaN(transactionDate.getTime())) return false;
-        
-        // Normalizar la hora a medianoche para comparación
-        transactionDate.setHours(0, 0, 0, 0);
-        
-        const now = new Date();
-        now.setHours(0, 0, 0, 0);
+        const start = new Date();
         
         switch (filterPeriod) {
-          case FilterPeriod.TODAY: {
-            const today = new Date(now);
-            return (
-              transactionDate.getFullYear() === today.getFullYear() &&
-              transactionDate.getMonth() === today.getMonth() &&
-              transactionDate.getDate() === today.getDate()
-            );
-          }
-          case FilterPeriod.WEEK: {
-            const weekAgo = new Date(now);
-            weekAgo.setDate(now.getDate() - 7);
-            weekAgo.setHours(0, 0, 0, 0);
-            return transactionDate >= weekAgo && transactionDate <= now;
-          }
-          case FilterPeriod.MONTH: {
-            const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-            firstDayOfMonth.setHours(0, 0, 0, 0);
-            return transactionDate >= firstDayOfMonth && transactionDate <= now;
-          }
-          case FilterPeriod.CUSTOM: {
-            if (!customDateRange.startDate || !customDateRange.endDate) return true;
-            
-            try {
-              const startDate = new Date(customDateRange.startDate);
-              const endDate = new Date(customDateRange.endDate);
-              
-              if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) return false;
-              
-              startDate.setHours(0, 0, 0, 0);
-              endDate.setHours(23, 59, 59, 999);
-              
-              return transactionDate >= startDate && transactionDate <= endDate;
-            } catch (e) {
-              console.error('Error al analizar fechas personalizadas:', e);
-              return false;
-            }
-          }
+          case FilterPeriod.TODAY:
+            start.setHours(0, 0, 0, 0);
+            return transactionDate >= start;
+          case FilterPeriod.WEEK:
+            start.setDate(start.getDate() - 7);
+            start.setHours(0, 0, 0, 0);
+            return transactionDate >= start;
+          case FilterPeriod.MONTH:
+            start.setMonth(start.getMonth() - 1);
+            start.setHours(0, 0, 0, 0);
+            return transactionDate >= start;
+          case FilterPeriod.CUSTOM:
+            const startDate = parseInputDate(customDateRange.startDate);
+            const endDate = parseInputDate(customDateRange.endDate);
+            endDate.setHours(23, 59, 59, 999);
+            return transactionDate >= startDate && transactionDate <= endDate;
           default:
             return true;
         }
-      } catch (e) {
-        console.error('Error al filtrar transacción:', e, 'Transacción:', t);
-        return false;
-      }
-    });
+      })
+      .sort((a: Transaction, b: Transaction) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [transactions, filterPeriod, customDateRange]);
 
   const filteredTransactions = getFilteredTransactions();
@@ -208,74 +124,46 @@ export const useTransactions = () => {
   );
   const expenses = filteredTransactions.filter((t: Transaction) => t.type === TransactionType.EXPENSE);
 
-  const financialSummary: FinancialSummaryData = {
-    bs: { 
-      periodIncome: 0, 
-      periodExpenses: 0,
-      cashBalance: 0, 
-      bankBalance: 0, 
-      totalBalance: 0 
-    },
-    usd: { 
-      periodIncome: 0, 
-      periodExpenses: 0,
-      cashBalance: 0, 
-      usdtBalance: 0, 
-      totalBalance: 0 
-    }
-  };
+  const financialSummary: FinancialSummaryData = transactions.reduce<FinancialSummaryData>((acc: FinancialSummaryData, t: Transaction) => {
+    const methodDetails = getPaymentMethodDetails(t.paymentMethod);
+    if (!methodDetails) return acc;
 
-  // Procesar todas las transacciones
-  transactions.forEach(t => {
-    // Asegurarse de que paymentMethods sea un array
-    const paymentMethods = Array.isArray(t.paymentMethods) ? t.paymentMethods : [];
+    const isWithinFilterPeriod = filteredTransactions.some((ft: Transaction) => ft.id === t.id);
     
-    // Procesar cada método de pago en la transacción
-    paymentMethods.forEach(payment => {
-      const methodDetails = getPaymentMethodDetails(payment.method);
-      if (!methodDetails) return;
+    // Calculate total balances regardless of filter period (balances are cumulative)
+    if (methodDetails.currency === Currency.BS) {
+        if (t.type === TransactionType.INCOME || t.type === TransactionType.ADJUSTMENT) {
+            if (methodDetails.accountType === 'cash') acc.bs.cashBalance += t.amount;
+            if (methodDetails.accountType === 'bank') acc.bs.bankBalance += t.amount;
+        } else if (t.type === TransactionType.EXPENSE) {
+            if (methodDetails.accountType === 'cash') acc.bs.cashBalance -= t.amount;
+            if (methodDetails.accountType === 'bank') acc.bs.bankBalance -= t.amount;
+        }
+    } else if (methodDetails.currency === Currency.USD) {
+        if (t.type === TransactionType.INCOME || t.type === TransactionType.ADJUSTMENT) {
+            if (methodDetails.accountType === 'cash') acc.usd.cashBalance += t.amount;
+            if (methodDetails.accountType === 'digital') acc.usd.usdtBalance += t.amount;
+        } else if (t.type === TransactionType.EXPENSE) {
+            if (methodDetails.accountType === 'cash') acc.usd.cashBalance -= t.amount;
+            if (methodDetails.accountType === 'digital') acc.usd.usdtBalance -= t.amount;
+        }
+    }
+    
+    // Calculate period income only for transactions within the filter
+    if (isWithinFilterPeriod && (t.type === TransactionType.INCOME || t.type === TransactionType.ADJUSTMENT)) {
+        if (methodDetails.currency === Currency.BS) {
+            acc.bs.periodIncome += t.amount;
+        } else if (methodDetails.currency === Currency.USD) {
+            acc.usd.periodIncome += t.amount;
+        }
+    }
 
-      const isWithinFilterPeriod = filteredTransactions.some(ft => ft.id === t.id);
-      
-      // Calcular saldos totales independientemente del período de filtro
-      if (methodDetails.currency === Currency.BS) {
-        if (t.type === TransactionType.INCOME || t.type === TransactionType.ADJUSTMENT) {
-          if (methodDetails.accountType === 'cash') financialSummary.bs.cashBalance += payment.amount;
-          if (methodDetails.accountType === 'bank') financialSummary.bs.bankBalance += payment.amount;
-        } else if (t.type === TransactionType.EXPENSE) {
-          if (methodDetails.accountType === 'cash') financialSummary.bs.cashBalance -= payment.amount;
-          if (methodDetails.accountType === 'bank') financialSummary.bs.bankBalance -= payment.amount;
-        }
-      } else if (methodDetails.currency === Currency.USD) {
-        if (t.type === TransactionType.INCOME || t.type === TransactionType.ADJUSTMENT) {
-          if (methodDetails.accountType === 'cash') financialSummary.usd.cashBalance += payment.amount;
-          if (methodDetails.accountType === 'digital') financialSummary.usd.usdtBalance += payment.amount;
-        } else if (t.type === TransactionType.EXPENSE) {
-          if (methodDetails.accountType === 'cash') financialSummary.usd.cashBalance -= payment.amount;
-          if (methodDetails.accountType === 'digital') financialSummary.usd.usdtBalance -= payment.amount;
-        }
-      }
-      
-      // Calcular ingresos y gastos del período solo para transacciones dentro del filtro
-      if (isWithinFilterPeriod) {
-        if (t.type === TransactionType.INCOME || t.type === TransactionType.ADJUSTMENT) {
-          if (methodDetails.currency === Currency.BS) {
-            financialSummary.bs.periodIncome += payment.amount;
-          } else if (methodDetails.currency === Currency.USD) {
-            financialSummary.usd.periodIncome += payment.amount;
-          }
-        } else if (t.type === TransactionType.EXPENSE) {
-          if (methodDetails.currency === Currency.BS) {
-            financialSummary.bs.periodExpenses += payment.amount;
-          } else if (methodDetails.currency === Currency.USD) {
-            financialSummary.usd.periodExpenses += payment.amount;
-          }
-        }
-      }
-    });
+    return acc;
+  }, {
+    bs: { periodIncome: 0, cashBalance: 0, bankBalance: 0, totalBalance: 0 },
+    usd: { periodIncome: 0, cashBalance: 0, usdtBalance: 0, totalBalance: 0 },
   });
 
-  // Calcular saldos totales
   financialSummary.bs.totalBalance = financialSummary.bs.cashBalance + financialSummary.bs.bankBalance;
   financialSummary.usd.totalBalance = financialSummary.usd.cashBalance + financialSummary.usd.usdtBalance;
 

@@ -1,25 +1,13 @@
-import { Transaction, TransactionType } from '../types.js';
-import { FirestoreService } from './firestoreService.js';
-import { 
-  where, 
-  orderBy, 
-  doc, 
-  getDoc, 
-  setDoc,
-  updateDoc,
-  deleteDoc,
-  collection,
-  getDocs,
-  query as firestoreQuery,
-  QueryConstraint,
-  DocumentData
-} from 'firebase/firestore';
-import { db } from './firebase.js';
+
+import { Transaction, TransactionType } from '../types';
+import { FirestoreService } from './firestoreService';
+import { where, orderBy, Timestamp, doc, getDoc, setDoc } from 'firebase/firestore';
+import { db } from './firebase';
 
 const COLLECTION_NAME = 'transactions';
 const SETTINGS_COLLECTION = 'settings';
 
-export class TransactionService extends FirestoreService<Transaction> {
+class TransactionService extends FirestoreService<Transaction> {
   constructor() {
     super(COLLECTION_NAME);
   }
@@ -29,76 +17,53 @@ export class TransactionService extends FirestoreService<Transaction> {
     startDate?: Date,
     endDate?: Date
   ): Promise<Transaction[]> {
-    try {
-      const conditions: QueryConstraint[] = [];
-      
-      if (startDate) {
-        conditions.push(where('date', '>=', startDate.toISOString().split('T')[0]));
-      }
-      
-      if (endDate) {
-        // Ajustar para incluir todo el día final
-        const endOfDay = new Date(endDate);
-        endOfDay.setHours(23, 59, 59, 999);
-        conditions.push(where('date', '<=', endOfDay.toISOString().split('T')[0]));
-      }
-      
-      // Ordenar por fecha descendente por defecto
-      conditions.push(orderBy('date', 'desc'));
-      
-      // Usar el método query de la clase base
-      const transactions = conditions.length > 0 
-        ? await this.query(conditions)
-        : await this.getAll();
-      
-      // Asegurarse de que todas las transacciones tengan fecha válida
-      return transactions.map(tx => ({
-        ...tx,
-        date: tx.date || new Date().toISOString().split('T')[0] // Usar fecha actual si no hay fecha
-      }));
-    } catch (error) {
-      console.error('Error al obtener transacciones:', error);
-      return [];
+    // Si no se proporcionan fechas, devolver todas las transacciones
+    if (!startDate && !endDate) {
+      return this.getAll();
     }
+    
+    const constraints: any[] = [];
+    
+    if (startDate) {
+      constraints.push(where('date', '>=', Timestamp.fromDate(startDate)));
+    }
+    
+    if (endDate) {
+      // Ajustar para incluir todo el día final
+      const endOfDay = new Date(endDate);
+      endOfDay.setHours(23, 59, 59, 999);
+      constraints.push(where('date', '<=', Timestamp.fromDate(endOfDay)));
+    }
+    
+    // Ordenar por fecha descendente por defecto
+    constraints.push(orderBy('date', 'desc'));
+    
+    return this.query(constraints);
   }
 
   // Obtener transacciones agrupadas por tipo
   async getTransactionsByType(type: TransactionType): Promise<Transaction[]> {
-    try {
-      const conditions = [
-        where('type', '==', type),
-        orderBy('date', 'desc')
-      ];
-      
-      return await this.query(conditions);
-    } catch (error) {
-      console.error('Error al obtener transacciones por tipo:', error);
-      return [];
-    }
+    return this.query([
+      where('type', '==', type),
+      orderBy('date', 'desc')
+    ]);
   }
 
   // Guardar múltiples transacciones
   async saveTransactions(transactions: Transaction[]): Promise<void> {
-    try {
-      const batch: Promise<any>[] = [];
-      
-      // Eliminar transacciones existentes primero si es necesario
-      const existingTransactions = await this.getAll();
-      existingTransactions.forEach(tx => {
-        batch.push(this.delete(tx.id));
-      });
-      
-      // Agregar las nuevas transacciones
-      transactions.forEach(tx => {
-        const { id, ...txData } = tx;
-        batch.push(this.create(txData));
-      });
-      
-      await Promise.all(batch);
-    } catch (error) {
-      console.error('Error al guardar transacciones:', error);
-      throw error;
-    }
+    // Eliminar transacciones existentes primero si es necesario
+    const existingTransactions = await this.getAll();
+    const deletePromises = existingTransactions.map(tx => this.delete(tx.id));
+    await Promise.all(deletePromises);
+    
+    // Agregar las nuevas transacciones
+    const addPromises = transactions.map(tx => {
+      // Extraer el id del objeto para no guardarlo dos veces
+      const { id, ...txData } = tx;
+      return this.create(txData);
+    });
+    
+    await Promise.all(addPromises);
   }
 
   // Obtener el tipo de cambio actual
@@ -108,7 +73,7 @@ export class TransactionService extends FirestoreService<Transaction> {
       const docSnap = await getDoc(docRef);
       
       if (docSnap.exists()) {
-        return docSnap.data()?.rate as number || null;
+        return docSnap.data().rate as number;
       }
       return null;
     } catch (error) {
@@ -121,51 +86,22 @@ export class TransactionService extends FirestoreService<Transaction> {
   async saveExchangeRate(rate: number): Promise<void> {
     try {
       const docRef = doc(db, SETTINGS_COLLECTION, 'exchange_rate');
-      await setDoc(docRef, { 
-        rate, 
-        updatedAt: new Date().toISOString() 
-      }, { merge: true });
+      await setDoc(docRef, { rate, updatedAt: new Date().toISOString() }, { merge: true });
     } catch (error) {
       console.error('Error al guardar el tipo de cambio:', error);
       throw error;
     }
   }
 
-  // Sobrescribir el método create para asegurar que se incluya la fecha de creación
-  override async create(data: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'>): Promise<Transaction> {
-    const now = new Date().toISOString();
-    const transactionData = {
-      ...data,
-      createdAt: now,
-      updatedAt: now
-    };
-    return super.create(transactionData);
-  }
-  
-  // Sobrescribir el método update para actualizar la fecha de actualización
-  override async update(id: string, data: Partial<Omit<Transaction, 'id' | 'createdAt'>>): Promise<Transaction> {
-    const updateData = {
-      ...data,
-      updatedAt: new Date().toISOString()
-    };
-    return super.update(id, updateData);
-  }
-
-  // Sobrescribir el método query para asegurar el tipado correcto
-  protected override async query(constraints: QueryConstraint[]): Promise<Transaction[]> {
-    const results = await super.query(constraints);
-    return results as Transaction[];
-  }
-
-  // Sobrescribir el método getAll para asegurar el tipado correcto
-  protected override async getAll(): Promise<Transaction[]> {
-    const results = await super.getAll();
-    return results as Transaction[];
-  }
+  // Métodos heredados de FirestoreService:
+  // - create(transaction: Omit<Transaction, 'id'>): Promise<Transaction>
+  // - getById(id: string): Promise<Transaction | null>
+  // - update(id: string, data: Partial<Transaction>): Promise<Transaction>
+  // - delete(id: string): Promise<{ id: string }>
 }
 
-// Crear una instancia del servicio de transacciones
 export const transactionService = new TransactionService();
 
 // Tipos de exportación para facilitar las importaciones
-export type { Transaction, TransactionType } from '../types.js';
+export { TransactionType, PaymentMethod } from '../types';
+export type { Transaction } from '../types';

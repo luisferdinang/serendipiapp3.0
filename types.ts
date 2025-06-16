@@ -9,7 +9,6 @@ export enum PaymentMethod {
   EFECTIVO_BS = 'EFECTIVO_BS',
   EFECTIVO_USD = 'EFECTIVO_USD',
   USDT = 'USDT',
-  ADJUSTMENT = 'AJUSTE',
 }
 
 export interface PaymentMethodOption {
@@ -25,22 +24,15 @@ export enum TransactionType {
   ADJUSTMENT = 'adjustment',
 }
 
-export interface PaymentSplit {
-  method: PaymentMethod;
-  amount: number;
-  currency: Currency;
-}
-
 export interface Transaction {
   id: string;
   description: string;
-  amount: number; // Monto total (suma de todos los métodos de pago)
-  unitPrice?: number; // Precio unitario
+  amount: number;
   quantity?: number;
   date: string; // YYYY-MM-DD
   type: TransactionType;
-  paymentMethods: PaymentSplit[]; // Ahora soporta múltiples métodos de pago
-  // Currency se deriva de los métodos de pago individuales
+  paymentMethod: PaymentMethod;
+  // Currency is derived from paymentMethod
 }
 
 export enum FilterPeriod {
@@ -53,15 +45,13 @@ export enum FilterPeriod {
 
 export interface BsSummary {
   periodIncome: number;
-  periodExpenses: number;
   cashBalance: number;
-  bankBalance: number; // Pago Móvil
+  bankBalance: number; // Pago Movil
   totalBalance: number;
 }
 
 export interface UsdSummary {
   periodIncome: number;
-  periodExpenses: number;
   cashBalance: number;
   usdtBalance: number;
   totalBalance: number;
