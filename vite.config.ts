@@ -28,6 +28,7 @@ export default defineConfig(({ mode }) => {
       open: true,
     },
     css: {
+      devSourcemap: true,
       modules: {
         localsConvention: 'camelCaseOnly',
       },

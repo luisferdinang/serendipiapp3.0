@@ -49,6 +49,63 @@ yarn-error.log*
 # Local development
 .cache/
 .temp/
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+
+# IDE
+.idea/
+.vscode/
+*.code-workspace
+
+# Environment files (except example)
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Build outputs
+/dist
+/build
+/.next
+/out
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local Netlify folder
+.netlify
+
+# Dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# Testing
+/coverage
+
+# Production
+/build
+
+# Misc
+.DS_Store
+*.pem
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local development
+.cache/
+.temp/
+
 .tmp/
 
 # Misc
