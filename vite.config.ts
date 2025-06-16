@@ -3,12 +3,29 @@ import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, '.', '');
+  // Cargar variables de entorno que comiencen con VITE_
+  const env = loadEnv(mode, process.cwd(), '');
+  
+  // Exponer las variables de entorno necesarias para el cliente
+  const envWithProcessPrefix = Object.entries(env).reduce(
+    (prev, [key, val]) => {
+      if (key.startsWith('VITE_') || key.startsWith('FIREBASE_')) {
+        return {
+          ...prev,
+          [`import.meta.env.${key}`]: JSON.stringify(val),
+          [`process.env.${key}`]: JSON.stringify(val),
+        };
+      }
+      return prev;
+    },
+    {}
+  );
   
   return {
     define: {
-      'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
+      ...envWithProcessPrefix,
+      'process.env.NODE_ENV': JSON.stringify(mode === 'production' ? 'production' : 'development'),
+      'process.env.VITE_APP_ENV': JSON.stringify(mode),
     },
     plugins: [react()],
     resolve: {
