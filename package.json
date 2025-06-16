@@ -12,7 +12,8 @@
     "type-check": "tsc --noEmit",
     "postinstall": "npm run type-check",
     "import:transactions": "tsx scripts/runImport.ts",
-    "create:admin": "tsx scripts/createAdmin.ts"
+    "create:admin": "tsx scripts/createAdmin.ts",
+    "netlify-build": "npm install --legacy-peer-deps && npm run build"
   },
   "dependencies": {
     "@firebase/analytics": "^0.10.16",

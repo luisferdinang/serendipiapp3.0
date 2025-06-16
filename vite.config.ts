@@ -33,5 +33,14 @@ export default defineConfig(({ mode }) => {
         localsConvention: 'camelCaseOnly',
       },
     },
+    optimizeDeps: {
+      esbuildOptions: {
+        // Node.js global to browser globalThis
+        define: {
+          global: 'globalThis',
+        },
+      },
+      include: ['react', 'react-dom', 'firebase/app', 'firebase/auth', 'firebase/firestore'],
+    },
   };
 });
